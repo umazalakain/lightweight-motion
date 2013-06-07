@@ -1,6 +1,8 @@
 import cv2
 import Image
 import numpy
+import requests
+import re
 from operator import sub
 from StringIO import StringIO
 from itertools import chain
@@ -57,13 +59,34 @@ class Camera(object):
 
 
 class HTTPCamera(Camera):
+    chunk_size = 1024
+
     def __init__(self, url, user, password):
-        self.capture = requests.get(url, auth=(user, password))
+        self.capture = requests.get(url, auth=(user, password), stream=True)
 
     def frames(self):
-        for frame in self.capture.iter_lines():
-            if frame:
-                yield Image.open(StringIO(frame))
+        buffer = ''
+        while True:
+            buffer += self.capture.iter_content(self.chunk_size)
+            frames = self.split_buffer(buffer)
+            frames, buffer = frames[:-1], frames[-1]
+            for frame in frames:
+                if frame:
+                    try:
+                        yield Image.open(StringIO(frame))
+                    except IOError:
+                        pass
+
+    def split_buffer(self, buffer):
+        raise NotImplemented()
+
+
+class FoscamHTTPCamera(HTTPCamera):
+    separator = re.compile('--ipcamera\r\nContent-Type: image/jpeg\r\n'
+                            'Content-Length: \d+?\r\n\r\n')
+
+    def split_buffer(self, buffer):
+        return self.separator.split(buffer)
 
 
 class USBCamera(Camera):
