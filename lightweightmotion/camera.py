@@ -2,6 +2,8 @@ import cv2
 import Image
 import numpy
 from operator import sub
+from StringIO import StringIO
+from itertools import chain
 
 
 class Camera(object):
@@ -9,6 +11,22 @@ class Camera(object):
         raise NotImplemented()
 
     def motion(self, threshold, sensitivity, stretch=0):
+        while True:
+            for frame in self.event(threshold, sensitivity, stretch):
+                yield frame
+
+    def events(self, threshold, sensitivity, stretch=0):
+        while True:
+            event = self.event(threshold, sensitivity, stretch)
+            try:
+                first_frame = next(event)
+            except StopIteration:
+                pass
+            else:
+                event = chain([first_frame], self.event(threshold, sensitivity, stretch))
+                yield event
+
+    def event(self, threshold, sensitivity, stretch=0):
         frames = self.frames()
         prev_frame = next(frames)
         from_last = 0
@@ -20,7 +38,10 @@ class Camera(object):
                 changed_pixels = self.changed_pixels(prev_frame, frame, threshold)
                 if changed_pixels > sensitivity:
                     from_last = stretch
+                    initial = False
                     yield frame
+                else:
+                    raise StopIteration()
             prev_frame = frame
 
     def changed_pixels(self, prev_frame, next_frame, threshold):
@@ -36,12 +57,13 @@ class Camera(object):
 
 
 class HTTPCamera(Camera):
-    def __init__(self, host, port, path, user, password):
-        pass
+    def __init__(self, url, user, password):
+        self.capture = requests.get(url, auth=(user, password))
 
     def frames(self):
-        while True:
-            yield
+        for frame in self.capture.iter_lines():
+            if frame:
+                yield Image.open(StringIO(frame))
 
 
 class USBCamera(Camera):

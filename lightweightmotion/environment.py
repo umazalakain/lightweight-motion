@@ -21,8 +21,15 @@ class Environment(object):
                     if self.available_space > reservation:
                         return
 
-    def save_frame(self, frame):
+    def save_event(self, event):
+        dirname = os.path.join(self.store_path, self.capture_filename())
+        os.mkdir(dirname)
+        for frame in event:
+            self.make_space(40 * 1024**2)
+            filename = '{}.jpg'.format(self.capture_filename())
+            filename = os.path.join(dirname, filename)
+            frame.save(filename)
+
+    def capture_filename(self):
         now = datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')
-        filename = '{prefix}-{now}.jpg'.format(prefix=self.prefix, now=now)
-        filename = os.path.join(self.store_path, filename)
-        frame.save(filename)
+        return '{}-{}'.format(self.prefix, now)
