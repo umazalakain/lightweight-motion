@@ -20,10 +20,10 @@ class Environment(object):
     def make_space(self, reservation):
         if self.available_space < reservation:
             logging.warning('No free space available, proceeding to making space')
-            for filename in sorted(os.listdir(self.store_path)):
-                if filename.startswith(self.prefix):
-                    os.remove(filename)
-                    logging.info('Deleted {} to avoid filling disk'.format(filename))
+            for dirname in sorted(os.listdir(self.store_path)):
+                if dirname.startswith(self.prefix):
+                    os.rmdir(dirname)
+                    logging.info('Deleted directory {} to avoid filling disk'.format(dirname))
                     if self.available_space > reservation:
                         logging.info('Free space now available')
                         return
