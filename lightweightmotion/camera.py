@@ -1,4 +1,3 @@
-import cv2
 import Image
 import numpy
 import requests
@@ -97,6 +96,7 @@ class FoscamHTTPCamera(HTTPCamera):
 
 class USBCamera(Camera):
     def __init__(self, device):
+        import cv2
         self.capture = cv2.VideoCapture(device)
         super(USBCamera, self).__init__()
 
