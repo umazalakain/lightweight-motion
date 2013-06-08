@@ -4,7 +4,7 @@ Lightweight motion detection, ready for your RPY!
 
 Usage:
     lightweight-motion [options] usb <device> <output-directory>
-    lightweight-motion [options] http <url> <output-directory> [--type=<type>]
+    lightweight-motion [options] foscam <url> <output-directory>
     lightweight-motion (-h | --help)
     lightweight-motion --version
 
@@ -14,12 +14,11 @@ Arguments:
     <output-directory>          Directory in witch to output events
 
 Options:
-    -t --type (foscam)          HTTP camera type [default: foscam]
     -u --user <user>            HTTP basic auth user
     -p --password <password>    HTTP basic auth password
-    --threshold <rate>          Difference to consider a pixel as changed [default: 0.05]
-    --sensitivity <rate>        Quantity of pixels to consider that there has been movement [default: 0.05]
-    --stretch <seconds>         [default: 10]
+    --threshold <rate>          Per pixel change rate to consider a pixel as changed [default: 0.05]
+    --sensitivity <rate>        Overall pixel change rate to consider that there has been movement [default: 0.05]
+    --stretch <seconds>         How much to time to stretch from last event deactivation [default: 10]
 """
 
 from docopt import docopt
@@ -33,17 +32,14 @@ def command(args):
         device = int(args['<device>'])
         camera = USBCamera(device)
 
-    elif args['http']:
+    elif args['foscam']:
         url = args['<url>']
         user = args['--user']
         password = args['--password']
         auth = (user, password)
         if user is None and password is None:
             auth = None
-        if args['--type'] == 'foscam':
-            HTTPCamera = FoscamHTTPCamera
-        # TODO: else... support other cams
-        camera = HTTPCamera(url, auth)
+        camera = FoscamHTTPCamera(url, auth)
 
     environment = Environment(args['<output-directory>'])
     threshold = float(args['--threshold'])
