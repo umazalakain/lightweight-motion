@@ -61,7 +61,7 @@ class Camera(object):
 class HTTPCamera(Camera):
     chunk_size = 1024
 
-    def __init__(self, url, user, password):
+    def __init__(self, url, user=None, password=None):
         self.capture = requests.get(url, auth=(user, password), stream=True)
 
     def frames(self):
