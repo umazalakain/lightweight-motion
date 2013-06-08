@@ -1,15 +1,19 @@
-import Image
-import numpy
-import requests
+import logging
 import re
+import numpy
+import Image
+import requests
 from operator import sub
-from StringIO import StringIO
 from itertools import chain
+from StringIO import StringIO
 
 
 class Camera(object):
     def __init__(self):
         self.width, self.height = next(self.frames()).size
+        logging.info('First frame gathered successfully')
+        logging.debug('Device width: {} Device height: {}'.format(
+            self.width, self.height))
 
     def frames(self):
         raise NotImplemented()
@@ -17,6 +21,7 @@ class Camera(object):
     def motion(self, threshold, sensitivity, stretch=0):
         while True:
             for frame in self.event(threshold, sensitivity, stretch):
+                logging.debug('Motion detected')
                 yield frame
 
     def events(self, threshold, sensitivity, stretch=0):
@@ -28,6 +33,7 @@ class Camera(object):
                 pass
             else:
                 event = chain([first_frame], self.event(threshold, sensitivity, stretch))
+                logging.info('New motion event')
                 yield event
 
     def event(self, threshold, sensitivity, stretch=0):
@@ -67,6 +73,7 @@ class HTTPCamera(Camera):
 
     def __init__(self, url, auth=None):
         self.capture = requests.get(url, auth=auth, stream=True)
+        logging.info('HTTP camera opened at {}'.format(url))
         super(HTTPCamera, self).__init__()
 
     def frames(self):
@@ -98,6 +105,7 @@ class USBCamera(Camera):
     def __init__(self, device):
         import cv2
         self.capture = cv2.VideoCapture(device)
+        logging.info('USB camera opened at {}'.format(device))
         super(USBCamera, self).__init__()
 
     def frames(self):
