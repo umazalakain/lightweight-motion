@@ -9,6 +9,9 @@ from itertools import chain
 
 
 class Camera(object):
+    def __init__(self):
+        self.width, self.height = next(self.frames()).size
+
     def frames(self):
         raise NotImplemented()
 
@@ -36,33 +39,36 @@ class Camera(object):
             if from_last > 0:
                 from_last -= 1
                 yield frame
+            elif self.has_changed(prev_frame, frame, threshold, sensitivity):
+                from_last = stretch
+                initial = False
+                yield frame
             else:
-                changed_pixels = self.changed_pixels(prev_frame, frame, threshold)
-                if changed_pixels > sensitivity:
-                    from_last = stretch
-                    initial = False
-                    yield frame
-                else:
-                    raise StopIteration()
+                raise StopIteration()
             prev_frame = frame
 
-    def changed_pixels(self, prev_frame, next_frame, threshold):
-        width, height = prev_frame.size
+    def has_changed(self, prev_frame, next_frame, threshold, sensitivity):
+        threshold *= 255
+        sensitivity *= (self.width * self.height)
         buffers = prev_frame.load(), next_frame.load()
         changed_pixels = 0
-        for x in xrange(width):
-            for y in xrange(height):
+        for x in xrange(self.width):
+            for y in xrange(self.height):
+                # only compare the green channel
                 pixels = ( b[x,y][1] for b in buffers )
                 if abs(sub(*pixels)) > threshold:
                     changed_pixels += 1
-        return changed_pixels
+                    if changed_pixels > sensitivity:
+                        return True
+        return False
 
 
 class HTTPCamera(Camera):
     chunk_size = 1024
 
-    def __init__(self, url, user=None, password=None):
-        self.capture = requests.get(url, auth=(user, password), stream=True)
+    def __init__(self, url, auth=None):
+        self.capture = requests.get(url, auth=auth, stream=True)
+        super(HTTPCamera, self).__init__()
 
     def frames(self):
         buffer = ''
@@ -92,6 +98,7 @@ class FoscamHTTPCamera(HTTPCamera):
 class USBCamera(Camera):
     def __init__(self, device):
         self.capture = cv2.VideoCapture(device)
+        super(USBCamera, self).__init__()
 
     def frames(self):
         while True:

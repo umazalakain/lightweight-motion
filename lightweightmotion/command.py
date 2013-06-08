@@ -17,8 +17,8 @@ Options:
     -t --type (foscam)          HTTP camera type [default: foscam]
     -u --user <user>            HTTP basic auth user
     -p --password <password>    HTTP basic auth password
-    --threshold <rate>          Difference to consider a pixel as changed [default: 0.2]
-    --sensitivity <rate>        Quantity of pixels to consider that there has been movement [default: 0.2]
+    --threshold <rate>          Difference to consider a pixel as changed [default: 0.05]
+    --sensitivity <rate>        Quantity of pixels to consider that there has been movement [default: 0.05]
     --stretch <seconds>         [default: 10]
 """
 
@@ -37,9 +37,13 @@ def command(args):
         url = args['<url>']
         user = args['--user']
         password = args['--password']
+        auth = (user, password)
+        if user is None and password is None:
+            auth = None
         if args['--type'] == 'foscam':
             HTTPCamera = FoscamHTTPCamera
-        camera = HTTPCamera(url, user, password)
+        # TODO: else... support other cams
+        camera = HTTPCamera(url, auth)
 
     environment = Environment(args['<output-directory>'])
     threshold = float(args['--threshold'])
