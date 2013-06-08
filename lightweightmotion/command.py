@@ -3,10 +3,10 @@
 Lightweight motion detection, ready for your RPY!
 
 Usage:
-    lightweightmotion [options] usb <device> <output-directory>
-    lightweightmotion [options] http <url> <output-directory> [--type=<type>]
-    lightweightmotion (-h | --help)
-    lightweightmotion --version
+    lightweight-motion [options] usb <device> <output-directory>
+    lightweight-motion [options] http <url> <output-directory> [--type=<type>]
+    lightweight-motion (-h | --help)
+    lightweight-motion --version
 
 Arguments:
     <device>                    Input video device ID (normally 0)
