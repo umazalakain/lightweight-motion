@@ -6,6 +6,8 @@ class Environment(object):
     def __init__(self, store_path, prefix='capture'):
         self.store_path = store_path
         self.prefix = prefix
+        if not os.path.isdir(self.store_path):
+            os.mkdir(self.store_path)
 
     @property
     def available_space(self):
