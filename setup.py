@@ -19,6 +19,7 @@ setup(name='lightweight-motion',
       zip_safe=False,
       install_requires=[
           'requests',
+          'docopt',
       ],
       entry_points={
           'console_scripts': [
