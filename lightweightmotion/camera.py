@@ -68,7 +68,7 @@ class HTTPCamera(Camera):
         buffer = ''
         while True:
             buffer += self.capture.iter_content(self.chunk_size)
-            frames = self.split_buffer(buffer)
+            frames = self.split_content(buffer)
             frames, buffer = frames[:-1], frames[-1]
             for frame in frames:
                 if frame:
@@ -77,7 +77,7 @@ class HTTPCamera(Camera):
                     except IOError:
                         pass
 
-    def split_buffer(self, buffer):
+    def split_content(self, buffer):
         raise NotImplemented()
 
 
@@ -85,7 +85,7 @@ class FoscamHTTPCamera(HTTPCamera):
     separator = re.compile('--ipcamera\r\nContent-Type: image/jpeg\r\n'
                             'Content-Length: \d+?\r\n\r\n')
 
-    def split_buffer(self, buffer):
+    def split_content(self, buffer):
         return self.separator.split(buffer)
 
 
