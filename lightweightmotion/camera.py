@@ -3,7 +3,7 @@ import re
 import requests
 import cv2
 from operator import sub
-from itertools import chain
+from itertools import takewhile, dropwhile
 
 
 class Camera(object):
@@ -16,38 +16,37 @@ class Camera(object):
     def frames(self):
         raise NotImplemented()
 
-    def motion(self, threshold, sensitivity, stretch=0):
-        while True:
-            for frame in self.event(threshold, sensitivity, stretch):
-                logging.debug('Motion detected')
+    def filter(self, threshold, sensitivity, stretch=0):
+        for frame, moved in self.detect(threshold, sensitivity, stretch):
+            if moved:
                 yield frame
 
     def events(self, threshold, sensitivity, stretch=0):
+        detected = self.detect(threshold, sensitivity, stretch)
         while True:
-            event = self.event(threshold, sensitivity, stretch)
-            try:
-                first_frame = next(event)
-            except StopIteration:
-                pass
-            else:
-                event = chain([first_frame], self.event(threshold, sensitivity, stretch))
-                logging.info('New motion event')
-                yield event
+            event = dropwhile(lambda e: not e[1], detected)
+            event = takewhile(lambda e: e[1], event)
+            event = ( e[0] for e in event )
+            # wait until the first frame arrives
+            # first_frame = next(event)
+            # event = chain([first_frame], event)
+            logging.info('New motion event')
+            yield event
 
-    def event(self, threshold, sensitivity, stretch=0):
+    def detect(self, threshold, sensitivity, stretch=0):
         frames = self.frames()
         prev_frame = next(frames)
         from_last = 0
         for frame in frames:
             if from_last > 0:
                 from_last -= 1
-                yield frame
+                yield (frame, True)
             elif self.has_changed(prev_frame, frame, threshold, sensitivity):
                 from_last = stretch
                 initial = False
-                yield frame
+                yield (frame, True)
             else:
-                raise StopIteration()
+                yield (frame, False)
             prev_frame = frame
 
     def has_changed(self, prev_frame, next_frame, threshold, sensitivity):
