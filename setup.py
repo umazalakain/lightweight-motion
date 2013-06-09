@@ -20,7 +20,6 @@ setup(name='lightweight-motion',
       install_requires=[
           'requests',
           'docopt',
-          'pil',
       ],
       entry_points={
           'console_scripts': [

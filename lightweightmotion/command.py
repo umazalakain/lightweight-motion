@@ -16,8 +16,8 @@ Arguments:
 Options:
     -u --user <user>            HTTP basic auth user
     -p --password <password>    HTTP basic auth password
-    --threshold <rate>          Per pixel change rate to consider a pixel as changed [default: 0.05]
-    --sensitivity <rate>        Overall pixel change rate to consider that there has been movement [default: 0.05]
+    --threshold <rate>          Per pixel change rate to consider a pixel as changed [default: 0.1]
+    --sensitivity <rate>        Overall pixel change rate to consider that there has been movement [default: 0.1]
     --stretch <seconds>         How much to time to stretch from last event deactivation [default: 10]
     -v --verbose                Verbose debug output
 """

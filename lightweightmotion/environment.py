@@ -1,5 +1,6 @@
 import logging
 import os
+import cv2
 from datetime import datetime
 
 
@@ -38,7 +39,7 @@ class Environment(object):
             self.make_space(40 * 1024**2)
             filename = '{}.jpg'.format(self.capture_filename())
             filename = os.path.join(dirname, filename)
-            frame.save(filename)
+            cv2.imwrite(filename, frame)
             logging.debug('Saved frame {}'.format(filename))
 
     def capture_filename(self):

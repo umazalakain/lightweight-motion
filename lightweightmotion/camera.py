@@ -1,16 +1,14 @@
 import logging
 import re
-import numpy
-import Image
 import requests
+import cv2
 from operator import sub
 from itertools import chain
-from StringIO import StringIO
 
 
 class Camera(object):
     def __init__(self):
-        self.width, self.height = next(self.frames()).size
+        self.width, self.height, depth = next(self.frames()).shape
         logging.info('First frame gathered successfully')
         logging.debug('Device width: {} Device height: {}'.format(
             self.width, self.height))
@@ -55,17 +53,10 @@ class Camera(object):
     def has_changed(self, prev_frame, next_frame, threshold, sensitivity):
         threshold *= 255
         sensitivity *= (self.width * self.height)
-        buffers = prev_frame.load(), next_frame.load()
-        changed_pixels = 0
-        for x in xrange(self.width):
-            for y in xrange(self.height):
-                # only compare the green channel
-                pixels = ( b[x,y][1] for b in buffers )
-                if abs(sub(*pixels)) > threshold:
-                    changed_pixels += 1
-                    if changed_pixels > sensitivity:
-                        return True
-        return False
+        difference = cv2.absdiff(prev_frame, next_frame).flatten()
+        difference = difference[difference>threshold]
+        return len(difference) > sensitivity
+
 
 
 class HTTPCamera(Camera):
@@ -85,7 +76,7 @@ class HTTPCamera(Camera):
             for frame in frames:
                 if frame:
                     try:
-                        yield Image.open(StringIO(frame))
+                        yield cv2.decode(frame)
                     except IOError:
                         pass
 
@@ -103,12 +94,11 @@ class FoscamHTTPCamera(HTTPCamera):
 
 class USBCamera(Camera):
     def __init__(self, device):
-        import cv2
         self.capture = cv2.VideoCapture(device)
         logging.info('USB camera opened at {}'.format(device))
         super(USBCamera, self).__init__()
 
     def frames(self):
         while True:
-            _, f = self.capture.read()
-            yield Image.fromarray(numpy.uint8(f))
+            _, frame = self.capture.read()
+            yield frame
