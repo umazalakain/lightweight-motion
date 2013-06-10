@@ -3,17 +3,18 @@
 Lightweight motion detection, ready for your RPY!
 
 Usage:
-    lightweight-motion [options] usb <device> <output-directory>
-    lightweight-motion [options] foscam <url> <output-directory>
+    lightweight-motion [options] usb <device> (-o <output-dir>|-w)
+    lightweight-motion [options] foscam <url> (-o <output-dir>|-w)
     lightweight-motion (-h | --help)
     lightweight-motion --version
 
 Arguments:
     <device>                    Input video device ID (normally 0)
-    <url>                       Input video device url (like http://your.cam/videostream.cgi)
-    <output-directory>          Directory in witch to output events
+    <url>                       Input video device url (ex: http://your.cam/videostream.cgi)
 
 Options:
+    -o --output <output-dir>    Output directory for recorded events
+    -w --watch                  Watch the camera stream and detected motion in realtime
     -u --user <user>            HTTP basic auth user
     -p --password <password>    HTTP basic auth password
     --threshold <rate>          Per pixel change rate to consider a pixel as changed [default: 0.1]
@@ -23,6 +24,7 @@ Options:
     -v --verbose                Verbose debug output
 """
 
+import cv2
 import logging
 from docopt import docopt
 
@@ -49,14 +51,21 @@ def command(args):
             auth = None
         camera = FoscamHTTPCamera(url, auth)
 
-    environment = Environment(args['<output-directory>'])
     threshold = float(args['--threshold'])
     sensitivity = float(args['--sensitivity'])
-    before = int(args['--before'])
-    after = int(args['--after'])
 
-    for event in camera.events(threshold, sensitivity, before, after):
-        environment.save_event(event)
+    if args['--output']:
+        before = int(args['--before'])
+        after = int(args['--after'])
+        environment = Environment(args['--output'])
+        for event in camera.events(threshold, sensitivity, before, after):
+            environment.save_event(event)
+
+    elif args['--watch']:
+        for frame in camera.watch(threshold, sensitivity):
+            cv2.imshow('camera', frame)
+            if cv2.waitKey(5)==27:
+                break
 
 
 def main():

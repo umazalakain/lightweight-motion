@@ -9,7 +9,7 @@ from itertools import takewhile, islice, chain
 
 class Camera(object):
     def __init__(self):
-        self.width, self.height, depth = next(self.frames()).shape
+        self.height, self.width, depth = next(self.frames()).shape
         logging.info('First frame gathered successfully')
         logging.debug('Device width: {} Device height: {}'.format(
             self.width, self.height))
@@ -37,6 +37,15 @@ class Camera(object):
             # get only the actual frames
             event = ( e[0] for e in event )
             yield event
+
+    def watch(self, threshold, sensitivity):
+        radius = min(self.width, self.height) / 20
+        position = (self.width-radius, radius)
+        for frame, motion in self.detect(threshold, sensitivity):
+            if motion:
+                frame = frame.copy()
+                cv2.circle(frame, position, radius, (0, 0, 255), -1)
+            yield frame
 
     def detect(self, threshold, sensitivity):
         frames = self.frames()
