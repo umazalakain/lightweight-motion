@@ -3,7 +3,8 @@ import re
 import requests
 import cv2
 from operator import sub
-from itertools import takewhile, dropwhile
+from collections import deque
+from itertools import takewhile, islice, chain
 
 
 class Camera(object):
@@ -16,37 +17,33 @@ class Camera(object):
     def frames(self):
         raise NotImplemented()
 
-    def filter(self, threshold, sensitivity, stretch=0):
-        for frame, moved in self.detect(threshold, sensitivity, stretch):
+    def filter(self, threshold, sensitivity):
+        for frame, moved in self.detect(threshold, sensitivity):
             if moved:
                 yield frame
 
-    def events(self, threshold, sensitivity, stretch=0):
-        detected = self.detect(threshold, sensitivity, stretch)
+    def events(self, threshold, sensitivity, b_frames=0, a_frames=0):
+        detected = self.detect(threshold, sensitivity)
         while True:
-            event = dropwhile(lambda e: not e[1], detected)
-            event = takewhile(lambda e: e[1], event)
+            # store the latest non-motion frames in a fixed-length queue
+            before = takewhile(lambda e: not e[1], detected)
+            before = iter(deque(before, b_frames))
+            # get the actual motion
+            motion = takewhile(lambda e: e[1], detected)
+            # get some more frames
+            after = islice(detected, a_frames)
+            # chain it all
+            event = chain(before, motion, after)
+            # get only the actual frames
             event = ( e[0] for e in event )
-            # wait until the first frame arrives
-            # first_frame = next(event)
-            # event = chain([first_frame], event)
-            logging.info('New motion event')
             yield event
 
-    def detect(self, threshold, sensitivity, stretch=0):
+    def detect(self, threshold, sensitivity):
         frames = self.frames()
         prev_frame = next(frames)
-        from_last = 0
         for frame in frames:
-            if from_last > 0:
-                from_last -= 1
-                yield (frame, True)
-            elif self.has_changed(prev_frame, frame, threshold, sensitivity):
-                from_last = stretch
-                initial = False
-                yield (frame, True)
-            else:
-                yield (frame, False)
+            changed = self.has_changed(prev_frame, frame, threshold, sensitivity)
+            yield (frame, changed)
             prev_frame = frame
 
     def has_changed(self, prev_frame, next_frame, threshold, sensitivity):

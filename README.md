@@ -20,4 +20,6 @@ Lightweight RPY-ready motion detection for USB and HTTP(S) cameras!
         -p --password <password>    HTTP basic auth password
         --threshold <rate>          Per pixel change rate to consider a pixel as changed [default: 0.1]
         --sensitivity <rate>        Overall pixel change rate to consider that there has been movement [default: 0.1]
-        --stretch <seconds>         How much to time to stretch from last event deactivation [default: 10]
+        --before <frames>           Frame quantity to record before movement is detected [default: 10]
+        --after <frames>            Frame quantity to record after movement is detected [default: 10]
+        -v --verbose                Verbose debug output

@@ -18,7 +18,8 @@ Options:
     -p --password <password>    HTTP basic auth password
     --threshold <rate>          Per pixel change rate to consider a pixel as changed [default: 0.1]
     --sensitivity <rate>        Overall pixel change rate to consider that there has been movement [default: 0.1]
-    --stretch <seconds>         How much to time to stretch from last event deactivation [default: 10]
+    --before <frames>           Frame quantity to record before movement is detected [default: 10]
+    --after <frames>            Frame quantity to record after movement is detected [default: 10]
     -v --verbose                Verbose debug output
 """
 
@@ -51,9 +52,10 @@ def command(args):
     environment = Environment(args['<output-directory>'])
     threshold = float(args['--threshold'])
     sensitivity = float(args['--sensitivity'])
-    stretch = int(args['--stretch'])
+    before = int(args['--before'])
+    after = int(args['--after'])
 
-    for event in camera.events(threshold, sensitivity, stretch):
+    for event in camera.events(threshold, sensitivity, before, after):
         environment.save_event(event)
 
 
