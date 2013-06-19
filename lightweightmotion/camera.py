@@ -10,13 +10,16 @@ from itertools import takewhile, islice, chain
 
 class Camera(object):
     def __init__(self):
+        self._frames = None
         self.height, self.width, depth = next(self.frames()).shape
         logging.info('First frame gathered successfully')
         logging.debug('Device width: {} Device height: {}'.format(
             self.width, self.height))
 
     def frames(self):
-        raise NotImplemented()
+        if self._frames is None:
+            self._frames = self.get_frames()
+        return self._frames
 
     def filter(self, threshold, sensitivity):
         for frame, moved in self.detect(threshold, sensitivity):
@@ -84,7 +87,7 @@ class HTTPCamera(Camera):
                 break
         logging.info('HTTP camera opened at {}'.format(self.url))
 
-    def frames(self):
+    def get_frames(self):
         while True:
             self.reconnect()
             buffer = ''
@@ -116,7 +119,7 @@ class USBCamera(Camera):
         logging.info('USB camera opened at {}'.format(device))
         super(USBCamera, self).__init__()
 
-    def frames(self):
+    def get_frames(self):
         while True:
             _, frame = self.capture.read()
             yield frame
