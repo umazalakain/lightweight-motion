@@ -3,8 +3,8 @@
 Lightweight motion detection, ready for your RPY!
 
 Usage:
-    lightweight-motion [options] usb <device> (-o <output-dir>|-w)
-    lightweight-motion [options] foscam <url> (-o <output-dir>|-w)
+    lightweight-motion [options] usb <device> [-d <output-dir>] [-w] [-s]
+    lightweight-motion [options] foscam <url> [-d <output-dir>] [-w] [-s]
     lightweight-motion (-h | --help)
     lightweight-motion --version
 
@@ -12,24 +12,33 @@ Arguments:
     <device>                    Input video device ID (normally 0)
     <url>                       Input video device url (ex: http://your.cam/videostream.cgi)
 
-Options:
-    -o --output <output-dir>    Output directory for recorded events
-    -w --watch                  Watch the camera stream and detected motion in realtime
+Inputs:
     -u --user <user>            HTTP basic auth user
     -p --password <password>    HTTP basic auth password
+
+Outputs:
+    -d --directory <output-dir> Output directory for recorded events
+    -w --window                 Watch the camera stream and detected motion in a window
+    -s --stream                 Stream the camera over HTTP
+
+Movement detection:
     --threshold <rate>          Per pixel change rate to consider a pixel as changed [default: 0.1]
     --sensitivity <rate>        Overall pixel change rate to consider that there has been movement [default: 0.1]
+
+Event recording:
     --before <frames>           Frame quantity to record before movement is detected [default: 10]
     --after <frames>            Frame quantity to record after movement is detected [default: 10]
+
+Other:
     -v --verbose                Verbose debug output
 """
 
-import cv2
 import logging
 from docopt import docopt
+from multiprocessing import Process
 
 from lightweightmotion.camera import FoscamHTTPCamera, USBCamera
-from lightweightmotion.environment import Environment
+from lightweightmotion.outputs import EventDirectory, HTTPStream, Window
 
 
 def command(args):
@@ -54,18 +63,25 @@ def command(args):
     threshold = float(args['--threshold'])
     sensitivity = float(args['--sensitivity'])
 
-    if args['--output']:
+    outputs = []
+
+    if args['--directory']:
         before = int(args['--before'])
         after = int(args['--after'])
-        environment = Environment(args['--output'])
-        for event in camera.events(threshold, sensitivity, before, after):
-            environment.save_event(event)
+        events = camera.events(threshold, sensitivity, before, after)
+        outputs.append(EventDirectory(events, args['--directory']))
 
-    elif args['--watch']:
-        for frame in camera.watch(threshold, sensitivity):
-            cv2.imshow('camera', frame)
-            if cv2.waitKey(5)==27:
-                break
+    if args['--window']:
+        frames = camera.frames()
+        outputs.append(Window(frames))
+
+    if args['--stream']:
+        frames = camera.frames()
+        outputs.append(HTTPStream(frames))
+
+    for output in outputs:
+        process = Process(target=output.run)
+        process.start()
 
 
 def main():
