@@ -1,3 +1,4 @@
+import numpy as np
 import logging
 import re
 import requests
@@ -68,22 +69,34 @@ class HTTPCamera(Camera):
     chunk_size = 1024
 
     def __init__(self, url, auth=None):
-        self.capture = requests.get(url, auth=auth, stream=True)
-        logging.info('HTTP camera opened at {}'.format(url))
+        self.url = url
+        self.auth = auth
         super(HTTPCamera, self).__init__()
 
-    def frames(self):
-        buffer = ''
+    def reconnect(self, retry=True):
         while True:
-            buffer += self.capture.iter_content(self.chunk_size)
-            frames = self.split_content(buffer)
-            frames, buffer = frames[:-1], frames[-1]
-            for frame in frames:
-                if frame:
-                    try:
-                        yield cv2.decode(frame)
-                    except IOError:
-                        pass
+            try:
+                self.capture = requests.get(self.url, auth=self.auth, stream=True)
+            except requests.exceptions.ConnectionError, msg:
+                if not retry:
+                    raise
+            else:
+                break
+        logging.info('HTTP camera opened at {}'.format(self.url))
+
+    def frames(self):
+        while True:
+            self.reconnect()
+            buffer = ''
+            for chunk in self.capture.iter_content(self.chunk_size):
+                buffer += chunk
+                frames = self.split_content(buffer)
+                frames, buffer = frames[:-1], frames[-1]
+                for frame in frames:
+                    frame = np.fromstring(frame, dtype='uint8')
+                    frame = cv2.imdecode(frame, 1)
+                    if frame is not None:
+                        yield frame
 
     def split_content(self, buffer):
         raise NotImplemented()
