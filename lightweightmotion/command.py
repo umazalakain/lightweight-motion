@@ -3,8 +3,8 @@
 Lightweight motion detection, ready for your RPY!
 
 Usage:
-    lightweight-motion [options] usb <device> [-d <output-dir>] [-w] [-s]
-    lightweight-motion [options] foscam <url> [-d <output-dir>] [-w] [-s]
+    lightweight-motion [options] usb <device> [--directory <output-dir>] [--window] [--stream]
+    lightweight-motion [options] foscam <url> [--directory <output-dir>] [--window] [--stream]
     lightweight-motion (-h | --help)
     lightweight-motion --version
 
