@@ -3,8 +3,8 @@
 Lightweight motion detection, ready for your RPY!
 
 Usage:
-    lightweight-motion [options] usb <device> [--directory <output-dir>] [--window] [--stream]
-    lightweight-motion [options] foscam <url> [--directory <output-dir>] [--window] [--stream]
+    lightweight-motion [options] usb <device> [--directory <output-dir>] [--stream <host:port>] [--window]
+    lightweight-motion [options] foscam <url> [--directory <output-dir>] [--stream <host:port>] [--window]
     lightweight-motion (-h | --help)
     lightweight-motion --version
 
@@ -18,8 +18,8 @@ Inputs:
 
 Outputs:
     -d --directory <output-dir> Output directory for recorded events
+    -s --stream <host:port>     Stream the camera over HTTP listening on host and port [default: localhost:8080]
     -w --window                 Watch the camera stream and detected motion in a window
-    -s --stream                 Stream the camera over HTTP
 
 Movement detection:
     --threshold <rate>          Per pixel change rate to consider a pixel as changed [default: 0.1]
@@ -71,13 +71,15 @@ def command(args):
         events = camera.events(threshold, sensitivity, before, after)
         outputs.append(EventDirectory(events, args['--directory']))
 
+    if args['--stream']:
+        host, port = args['--stream'].split(':')
+        port = int(port)
+        frames = camera.frames()
+        outputs.append(HTTPStream(frames, host, port))
+
     if args['--window']:
         frames = camera.frames()
         outputs.append(Window(frames))
-
-    if args['--stream']:
-        frames = camera.frames()
-        outputs.append(HTTPStream(frames))
 
     for output in outputs:
         process = Process(target=output.run)

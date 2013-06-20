@@ -39,11 +39,11 @@ class HTTPStream(object):
     class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
         pass
 
-    def __init__(self, frames):
+    def __init__(self, frames, host, port):
         self.frames = frames
         self.handler = self.CameraHandler
         self.handler.frames = self.frames
-        self.server = self.ThreadedHTTPServer(('localhost', 8080), self.handler)
+        self.server = self.ThreadedHTTPServer((host, port), self.handler)
 
     def run(self):
         try:

@@ -5,8 +5,8 @@ Lightweight RPY-ready motion detection for USB and HTTP(S) cameras!
 
 
     Usage:
-        lightweight-motion [options] usb <device> [--directory <output-dir>] [--window] [--stream]
-        lightweight-motion [options] foscam <url> [--directory <output-dir>] [--window] [--stream]
+        lightweight-motion [options] usb <device> [--directory <output-dir>] [--stream <host:port>] [--window]
+        lightweight-motion [options] foscam <url> [--directory <output-dir>] [--stream <host:port>] [--window]
         lightweight-motion (-h | --help)
         lightweight-motion --version
 
@@ -20,8 +20,8 @@ Lightweight RPY-ready motion detection for USB and HTTP(S) cameras!
 
     Outputs:
         -d --directory <output-dir> Output directory for recorded events
+        -s --stream <host:port>     Stream the camera over HTTP listening on host and port [default: localhost:8080]
         -w --window                 Watch the camera stream and detected motion in a window
-        -s --stream                 Stream the camera over HTTP
 
     Movement detection:
         --threshold <rate>          Per pixel change rate to consider a pixel as changed [default: 0.1]
