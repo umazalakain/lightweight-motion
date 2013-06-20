@@ -27,9 +27,8 @@ class HTTPStream(object):
                     'boundary=--ipcamera')
             self.end_headers()
             for frame in self.frames:
-                cv2.imwrite('prueba.jpeg', frame)
-                with open('prueba.jpeg', 'rb') as jpeg:
-                    frame = jpeg.read()
+                retval, frame = cv2.imencode('.jpeg', frame)
+                frame = frame.tostring()
                 self.wfile.write('--ipcamera\r\n')
                 self.send_header('Content-Type', 'image/jpeg')
                 self.send_header('Content-Length', len(frame))
