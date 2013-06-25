@@ -34,47 +34,41 @@ from docopt import docopt
 from multiprocessing import Process
 from purl import URL
 
+from lightweightmotion.config import Config
 from lightweightmotion.camera import FoscamHTTPCamera, USBCamera
 from lightweightmotion.outputs import EventDirectory, HTTPStream, Window
 
 
 def command(args):
+    config = Config.load(args)
     level = logging.ERROR
-    if args['--verbose']:
+    if config.DEBUG:
         level = logging.DEBUG
     logging.basicConfig(level=level)
 
-    try:
-        device = int(args['<device>'])
-    except ValueError:
-        url = URL(args['<device>'])
+    if config.DEVICE:
+        camera = USBCamera(device)
+    else:
+        url = URL(config.URL)
         auth = url.username, url.password
         if url.username is None and url.password is None:
             auth = None
         url = URL(url.as_string(), username='', password='')
         camera = FoscamHTTPCamera(url.as_string(), auth)
-    else:
-        camera = USBCamera(device)
-
-    threshold = float(args['--threshold'])
-    sensitivity = float(args['--sensitivity'])
 
     outputs = []
 
-    if args['--directory']:
-        before = int(args['--before'])
-        after = int(args['--after'])
-        events = camera.events(threshold, sensitivity, before, after)
-        outputs.append(EventDirectory(events, args['--directory']))
+    if config.EVENT_DIR:
+        events = camera.events(config.THRESHOLD, config.SENSITIVITY,
+                config.BEFORE, config.AFTER)
+        outputs.append(EventDirectory(events, config.EVENT_DIR))
 
-    if args['--stream']:
-        host, port = args['--stream'].split(':')
-        port = int(port)
-        frames = camera.watch(threshold, sensitivity)
-        outputs.append(HTTPStream(frames, host, port))
+    if config.STREAM:
+        frames = camera.watch(config.THRESHOLD, config.SENSITIVITY)
+        outputs.append(HTTPStream(frames, *config.STREAM))
 
-    if args['--window']:
-        frames = camera.watch(threshold, sensitivity)
+    if config.WINDOW:
+        frames = camera.watch(config.THRESHOLD, config.SENSITIVITY)
         outputs.append(Window(frames))
 
     for output in outputs:
