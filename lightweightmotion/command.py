@@ -3,18 +3,14 @@
 Lightweight motion detection, ready for your RPY!
 
 Usage:
-    lightweight-motion [options] usb <device> [--directory <output-dir>] [--stream <host:port>] [--window]
-    lightweight-motion [options] foscam <url> [--directory <output-dir>] [--stream <host:port>] [--window]
+    lightweight-motion [options] <device> [-d <output-dir>] [-s <host:port>] [-w]
+    lightweight-motion [options] <url> [-d <output-dir>] [-s <host:port>] [-w]
     lightweight-motion (-h | --help)
     lightweight-motion --version
 
 Arguments:
     <device>                    Input video device ID (normally 0)
-    <url>                       Input video device url (ex: http://your.cam/videostream.cgi)
-
-Inputs:
-    -u --user <user>            HTTP basic auth user
-    -p --password <password>    HTTP basic auth password
+    <url>                       Input video device url (ex: http://user:pass@your.cam/videostream.cgi)
 
 Outputs:
     -d --directory <output-dir> Output directory for recorded events
@@ -36,29 +32,29 @@ Other:
 import logging
 from docopt import docopt
 from multiprocessing import Process
+from purl import URL
 
 from lightweightmotion.camera import FoscamHTTPCamera, USBCamera
 from lightweightmotion.outputs import EventDirectory, HTTPStream, Window
 
 
 def command(args):
+    level = logging.ERROR
     if args['--verbose']:
-        logging.basicConfig(level=logging.DEBUG)
-    else:
-        logging.basicConfig(level=logging.ERROR)
+        level = logging.DEBUG
+    logging.basicConfig(level=level)
 
-    if args['usb']:
+    try:
         device = int(args['<device>'])
-        camera = USBCamera(device)
-
-    elif args['foscam']:
-        url = args['<url>']
-        user = args['--user']
-        password = args['--password']
-        auth = (user, password)
-        if user is None and password is None:
+    except ValueError:
+        url = URL(args['<device>'])
+        auth = url.username, url.password
+        if url.username is None and url.password is None:
             auth = None
-        camera = FoscamHTTPCamera(url, auth)
+        url = URL(url.as_string(), username='', password='')
+        camera = FoscamHTTPCamera(url.as_string(), auth)
+    else:
+        camera = USBCamera(device)
 
     threshold = float(args['--threshold'])
     sensitivity = float(args['--sensitivity'])
