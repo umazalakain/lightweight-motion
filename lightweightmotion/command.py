@@ -74,11 +74,11 @@ def command(args):
     if args['--stream']:
         host, port = args['--stream'].split(':')
         port = int(port)
-        frames = camera.frames()
+        frames = camera.watch(threshold, sensitivity)
         outputs.append(HTTPStream(frames, host, port))
 
     if args['--window']:
-        frames = camera.frames()
+        frames = camera.watch(threshold, sensitivity)
         outputs.append(Window(frames))
 
     for output in outputs:
