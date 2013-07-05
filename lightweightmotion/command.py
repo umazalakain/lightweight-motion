@@ -54,7 +54,7 @@ def command(args):
 
     if config.URL:
         url = URL(config.URL)
-        auth = url.username, url.password
+        auth = url.username(), url.password()
         if url.username is None and url.password is None:
             auth = None
         url = URL(url.as_string(), username='', password='')
