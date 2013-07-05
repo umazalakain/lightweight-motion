@@ -1,75 +1,77 @@
-import os
+class Config(dict):
+    def _get_stream(self, string):
+        host, port = string.split(':')
+        port = int(port)
+        return host, port
+
+    def _get_movement_threshold(self, string):
+        return float(string)
+
+    def _get_movement_sensitivity(self, string):
+        return float(string)
 
 
-class Config(object):
-    home_config = os.path.join(os.environ['HOME'], 
-            '.config/lightweightmotion/config.py')
-
-    def get(self, arg_key, config_key):
-        return self.args[arg_key] or self.config.get(config_key, None)
-
-    @classmethod
-    def load(cls, args, config_file=None):
-        config = cls()
-        config.args = args
-
-        if config_file is None
-            config_file = self.home_config
-        loaded = {}
-        execfile(config_file, {}, loaded)
-        config.config = loaded
-        return config
-
+class ArgsConfig(Config):
     @property
     def DEVICE(self):
-        if self.args['<device'>]:
-            try:
-                device = int(self.args['<device>'])
-            except ValueError:
-                return None
-        else:
-            device = self.config.get('DEVICE', None)
-        return device
+        try:
+            return int(self['<device>'])
+        except ValueError:
+            return None
 
     @property
     def URL(self):
         if self.DEVICE is None:
-            url = self.args['<device>'] or self.config.get('URL', None)
-            if url is None:
-                raise
+            return self['<device>']
 
     @property
     def STREAM(self):
-        host, port = self.get('--stream', 'STREAM').split(':')
-        port = int(port)
-        return host, port
+        return self._get_stream(self['--stream'])
 
     @property
     def WINDOW(self):
-        return self.get('--window', 'WINDOW')
+        return self['--window']
 
     @property
     def MOVEMENT_THRESHOLD(self):
-        threshold = self.get('--threshold', 'MOVEMENT_THRESHOLD')
-        return float(threshold)
+        return self._get_movement_threshold(self['--threshold'])
 
     @property
     def MOVEMENT_SENSITIVITY(self):
-        sensitivity = self.get('--sensitivity', 'MOVEMENT_SENSITIVITY')
-        return float(sensitivity)
+        return self._get_movement_sensitivity(self['--sensitivity'])
 
     @property
     def EVENT_DIR(self):
-        return self.get('--directory', 'EVENT_DIR')
+        return self['--directory']
 
     @property
     def EVENT_BEFORE(self):
-        return self.get('--before', 'EVENT_BEFORE')
+        return self['--before']
 
     @property
     def EVENT_AFTER(self):
-        return self.get('--after', 'EVENT_AFTER')
+        return self['--after']
 
     @property
     def DEBUG(self):
-        return self.get('--verbose', 'DEBUG')
+        return self['--verbose']
+
+
+class FileConfig(Config):
+    def __init__(self, config_file):
+        execfile(config_file, {}, self)
+
+    def __getattr__(self, name):
+        return self[name]
+
+    @property
+    def STREAM(self):
+        return self._get_stream(self['STREAM'])
+
+    @property
+    def MOVEMENT_THRESHOLD(self):
+        return self._get_movement_threshold(self['MOVEMENT_THRESHOLD'])
+
+    @property
+    def MOVEMENT_SENSITIVITY(self):
+        return self._get_movement_sensitivity(self['MOVEMENT_SENSITIVITY'])

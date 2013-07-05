@@ -3,6 +3,7 @@
 Lightweight motion detection, ready for your RPY!
 
 Usage:
+    lightweight-motion -c <config_file>
     lightweight-motion [options] <device> [-d <output-dir>] [-s <host:port>] [-w]
     lightweight-motion [options] <url> [-d <output-dir>] [-s <host:port>] [-w]
     lightweight-motion (-h | --help)
@@ -34,41 +35,52 @@ from docopt import docopt
 from multiprocessing import Process
 from purl import URL
 
-from lightweightmotion.config import Config
+from lightweightmotion.config import ArgsConfig, FileConfig
 from lightweightmotion.camera import FoscamHTTPCamera, USBCamera
 from lightweightmotion.outputs import EventDirectory, HTTPStream, Window
 
 
 def command(args):
-    config = Config.load(args)
+    config_file = args['<config_file>']
+    if config_file:
+        config = FileConfig(config_file)
+    else:
+        config = ArgsConfig(args)
+
     level = logging.ERROR
     if config.DEBUG:
         level = logging.DEBUG
     logging.basicConfig(level=level)
 
-    if config.DEVICE:
-        camera = USBCamera(device)
-    else:
+    if config.URL:
         url = URL(config.URL)
         auth = url.username, url.password
         if url.username is None and url.password is None:
             auth = None
         url = URL(url.as_string(), username='', password='')
         camera = FoscamHTTPCamera(url.as_string(), auth)
+    else:
+        camera = USBCamera(config.DEVICE)
 
     outputs = []
 
     if config.EVENT_DIR:
-        events = camera.events(config.THRESHOLD, config.SENSITIVITY,
+        events = camera.events(
+                config.MOVEMENT_THRESHOLD, 
+                config.MOVEMENT_SENSITIVITY,
                 config.BEFORE, config.AFTER)
         outputs.append(EventDirectory(events, config.EVENT_DIR))
 
     if config.STREAM:
-        frames = camera.watch(config.THRESHOLD, config.SENSITIVITY)
+        frames = camera.watch(
+                config.MOVEMENT_THRESHOLD, 
+                config.MOVEMENT_SENSITIVITY)
         outputs.append(HTTPStream(frames, *config.STREAM))
 
     if config.WINDOW:
-        frames = camera.watch(config.THRESHOLD, config.SENSITIVITY)
+        frames = camera.watch(
+                config.MOVEMENT_THRESHOLD, 
+                config.MOVEMENT_SENSITIVITY)
         outputs.append(Window(frames))
 
     for output in outputs:
