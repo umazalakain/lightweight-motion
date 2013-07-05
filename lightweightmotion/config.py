@@ -24,7 +24,7 @@ class Config(object):
     def DEVICE(self):
         if self.args['<device'>]:
             try:
-                device = int(args['<device>'])
+                device = int(self.args['<device>'])
             except ValueError:
                 return None
         else:
