@@ -68,7 +68,7 @@ def command(args):
         events = camera.events(
                 config.MOVEMENT_THRESHOLD, 
                 config.MOVEMENT_SENSITIVITY,
-                config.BEFORE, config.AFTER)
+                config.EVENT_BEFORE, config.EVENT_AFTER)
         outputs.append(EventDirectory(events, config.EVENT_DIR))
 
     if config.STREAM:

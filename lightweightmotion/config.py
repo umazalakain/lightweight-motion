@@ -65,6 +65,11 @@ class FileConfig(Config):
         return self[name]
 
     @property
+    def URL(self):
+        if self.DEVICE is None:
+            return self['URL']
+
+    @property
     def STREAM(self):
         return self._get_stream(self['STREAM'])
 
@@ -75,3 +80,15 @@ class FileConfig(Config):
     @property
     def MOVEMENT_SENSITIVITY(self):
         return self._get_movement_sensitivity(self['MOVEMENT_SENSITIVITY'])
+
+    @property
+    def EVENT_DIR(self):
+        return self.get('EVENT_DIR', False)
+
+    @property
+    def WINDOW(self):
+        return self.get('WINDOW', False)
+
+    @property
+    def STREAM(self):
+        return self.get('STREAM', False)
