@@ -88,7 +88,3 @@ class FileConfig(Config):
     @property
     def WINDOW(self):
         return self.get('WINDOW', False)
-
-    @property
-    def STREAM(self):
-        return self.get('STREAM', False)
