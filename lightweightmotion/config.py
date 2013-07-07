@@ -62,7 +62,7 @@ class FileConfig(Config):
         execfile(config_file, {}, self)
 
     def __getattr__(self, name):
-        return self[name]
+        return self.get(name, None)
 
     @property
     def URL(self):
@@ -80,11 +80,3 @@ class FileConfig(Config):
     @property
     def MOVEMENT_SENSITIVITY(self):
         return self._get_movement_sensitivity(self['MOVEMENT_SENSITIVITY'])
-
-    @property
-    def EVENT_DIR(self):
-        return self.get('EVENT_DIR', False)
-
-    @property
-    def WINDOW(self):
-        return self.get('WINDOW', False)
