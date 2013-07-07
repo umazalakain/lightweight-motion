@@ -31,66 +31,95 @@ Other:
 """
 
 import logging
+import signal
+import os
 from docopt import docopt
 from multiprocessing import Process
 from purl import URL
+from time import sleep
 
 from lightweightmotion.config import ArgsConfig, FileConfig
 from lightweightmotion.camera import FoscamHTTPCamera, USBCamera
 from lightweightmotion.outputs import EventDirectory, HTTPStream, Window
 
 
-def command(args):
-    config_file = args['<config_file>']
-    if config_file:
-        config = FileConfig(config_file)
-    else:
-        config = ArgsConfig(args)
+class Command(object):
+    def __init__(self, args):
+        signal.signal(signal.SIGTERM, self.stop)
+        self.processes = []
+        config_file = args['<config_file>']
+        if config_file:
+            self.config = FileConfig(config_file)
+        else:
+            self.config = ArgsConfig(args)
 
-    level = logging.ERROR
-    if config.DEBUG:
-        level = logging.DEBUG
-    logging.basicConfig(level=level)
+    def setup_logging(self):
+        level = logging.ERROR
+        if self.config.DEBUG:
+            level = logging.DEBUG
+        logging.basicConfig(level=level)
 
-    if config.URL:
-        url = URL(config.URL)
-        auth = url.username(), url.password()
-        if url.username is None and url.password is None:
-            auth = None
-        url = URL(url.as_string(), username='', password='')
-        camera = FoscamHTTPCamera(url.as_string(), auth)
-    else:
-        camera = USBCamera(config.DEVICE)
+    def get_camera(self):
+        if self.config.URL:
+            url = URL(self.config.URL)
+            auth = url.username(), url.password()
+            if url.username is None and url.password is None:
+                auth = None
+            url = URL(url.as_string(), username='', password='')
+            return FoscamHTTPCamera(url.as_string(), auth)
+        else:
+            return USBCamera(self.config.DEVICE)
 
-    outputs = []
+    def get_outputs(self, camera):
+        outputs = []
 
-    if config.EVENT_DIR:
-        events = camera.events(
-                config.MOVEMENT_THRESHOLD, 
-                config.MOVEMENT_SENSITIVITY,
-                config.EVENT_BEFORE, config.EVENT_AFTER)
-        outputs.append(EventDirectory(events, config.EVENT_DIR))
+        if self.config.EVENT_DIR:
+            events = camera.events(
+                    self.config.MOVEMENT_THRESHOLD, 
+                    self.config.MOVEMENT_SENSITIVITY,
+                    self.config.EVENT_BEFORE, self.config.EVENT_AFTER)
+            outputs.append(EventDirectory(events, self.config.EVENT_DIR))
 
-    if config.STREAM:
-        frames = camera.watch(
-                config.MOVEMENT_THRESHOLD, 
-                config.MOVEMENT_SENSITIVITY)
-        outputs.append(HTTPStream(frames, *config.STREAM))
+        if self.config.STREAM:
+            frames = camera.watch(
+                    self.config.MOVEMENT_THRESHOLD, 
+                    self.config.MOVEMENT_SENSITIVITY)
+            outputs.append(HTTPStream(frames, *self.config.STREAM))
 
-    if config.WINDOW:
-        frames = camera.watch(
-                config.MOVEMENT_THRESHOLD, 
-                config.MOVEMENT_SENSITIVITY)
-        outputs.append(Window(frames))
+        if self.config.WINDOW:
+            frames = camera.watch(
+                    self.config.MOVEMENT_THRESHOLD, 
+                    self.config.MOVEMENT_SENSITIVITY)
+            outputs.append(Window(frames))
 
-    for output in outputs:
-        process = Process(target=output.run)
-        process.start()
+        return outputs
+
+    def run(self):
+        self.setup_logging()
+        camera = self.get_camera()
+        outputs = self.get_outputs(camera)
+
+        for output in outputs:
+            process = Process(target=output.run)
+            process.daemon = True
+            process.start()
+            self.processes.append(process)
+
+        self.running = True
+        while self.running:
+            sleep(1)
+
+    def stop(self, signal, frame):
+        for process in self.processes:
+            process.terminate()
+            os.kill(process.pid, 9)
+        self.running = False
 
 
 def main():
     args = docopt(__doc__, version='0.1')
-    command(args)
+    command = Command(args)
+    command.run()
 
 if __name__ == '__main__':
     main()
