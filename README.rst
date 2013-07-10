@@ -4,7 +4,10 @@ lightweight-motion
 **Lightweight RPY-ready motion detection for USB and HTTP(S) cameras!**
 
 
-Execute it from the command line as follows::
+Command line execution
+-----------------------
+
+::
 
     Usage:
         lightweight-motion -c <config_file>
@@ -34,7 +37,8 @@ Execute it from the command line as follows::
         -v --verbose                Verbose debug output
 
 
-You can also call it with a config file that should contain the following:
+Config file syntax
+------------------
 
 
 .. code:: python
@@ -67,6 +71,13 @@ You can also call it with a config file that should contain the following:
     DEBUG = True # False
 
 
-.. note::
+Requirements
+------------
+
+In addition to the requirements denoted in `setup.py`, lightweight-motion requires OpenCV 2.x. If you plan to make use of HTTP cameras, you need OpenCV 2.4 or higher. You can currently find it in debians experimental repos. Sadly, if you are on a Raspberry Pi, you need to compile it yourself.
+
+
+Note
+----
 
     Currently, the generated output frame stream is split by the active outputs. If HTTP stream, window and event recording outputs are active, each of them will only receive one third of the frames. Because of that, it's strongly encouraged to only use one output.
