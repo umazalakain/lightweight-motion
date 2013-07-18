@@ -74,7 +74,7 @@ Config file syntax
 Requirements
 ------------
 
-In addition to the requirements denoted in `setup.py`, lightweight-motion requires OpenCV 2.x. If you plan to make use of HTTP cameras, you need OpenCV 2.4 or higher. You can currently find it in debians experimental repos. Sadly, if you are on a Raspberry Pi, you need to compile it yourself.
+In addition to the requirements denoted in `setup.py`, lightweight-motion requires OpenCV 2.x. If you plan to make use of HTTP cameras, you need OpenCV 2.4 or higher. You can currently find it in debians experimental repos. Sadly, if you are on a Raspberry Pi, you need to `compile it yourself <http://mitchtech.net/raspberry-pi-opencv/>`_.
 
 
 Note
