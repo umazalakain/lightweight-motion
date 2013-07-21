@@ -1,3 +1,4 @@
+from __future__ import division
 import numpy as np
 import logging
 import re
@@ -40,10 +41,11 @@ class Camera(object):
             event = chain(before, motion, after)
             # get only the actual frames
             event = ( e[0] for e in event )
+            logging.info('New event detected')
             yield event
 
     def watch(self, threshold, sensitivity):
-        radius = min(self.width, self.height) / 20
+        radius = min(self.width, self.height) // 20
         position = (self.width-radius, radius)
         for frame, motion in self.detect(threshold, sensitivity):
             if motion:
@@ -60,12 +62,19 @@ class Camera(object):
             prev_frame = frame
 
     def has_changed(self, prev_frame, next_frame, threshold, sensitivity):
-        threshold *= 255
-        sensitivity *= (self.width * self.height)
-        difference = cv2.absdiff(prev_frame, next_frame).flatten()
-        difference = difference[difference>threshold]
-        return len(difference) > sensitivity
-
+        # get the absolute diff between the two frames
+        changed = cv2.absdiff(prev_frame, next_frame)
+        # get the rgb mean value
+        changed = np.mean(changed, 2)
+        # count the pixels that are greather than the threshold
+        changed = len(changed[changed > threshold*255])
+        # compute the change rate
+        change_rate = changed / (self.width * self.height)
+        logging.debug('{} pixels changed ({}/1)'.format(changed, change_rate))
+        if change_rate > sensitivity:
+            logging.info('Motion detected')
+            return True
+        return False
 
 
 class HTTPCamera(Camera):
