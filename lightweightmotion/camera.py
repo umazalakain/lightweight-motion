@@ -25,16 +25,24 @@ class Camera(object):
         pass
 
     def frames(self):
+        """Yield all the frames."""
         if self._frames is None:
             self._frames = self.get_frames()
         return self._frames
 
     def filter(self, threshold, sensitivity):
+        """Yield only frames with motion."""
         for frame, moved in self.detect(threshold, sensitivity):
             if moved:
                 yield frame
 
     def events(self, threshold, sensitivity, b_frames=0, a_frames=0):
+        """
+        Yield motion events (which are frame iterators).
+
+        If b_frames and a_frames specified, frames before and after the 
+        detected motion are included too.
+        """
         detected = self.detect(threshold, sensitivity)
         while True:
             # store the latest non-motion frames in a fixed-length queue
@@ -52,6 +60,9 @@ class Camera(object):
             yield event
 
     def watch(self, threshold, sensitivity):
+        """
+        Yield all frames painting little dots when motion is detected.
+        """
         radius = min(self.width, self.height) // 20
         position = (self.width-radius, radius)
         for frame, motion in self.detect(threshold, sensitivity):
@@ -61,6 +72,10 @@ class Camera(object):
             yield frame
 
     def detect(self, threshold, sensitivity):
+        """
+        Yield (frame, motion) tuples where motion indicates if motion has 
+        been detected.
+        """
         frames = self.frames()
         prev_frame = next(frames)
         for frame in frames:
@@ -69,6 +84,9 @@ class Camera(object):
             prev_frame = frame
 
     def has_changed(self, prev_frame, next_frame, threshold, sensitivity):
+        """
+        Resolve if motion has taken place between two frames.
+        """
         # get the absolute diff between the two frames
         changed = cv2.absdiff(prev_frame, next_frame)
         # get the rgb mean value
