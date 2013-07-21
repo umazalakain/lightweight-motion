@@ -13,6 +13,7 @@ class Camera(object):
     def __init__(self):
         self._frames = None
         self.height, self.width, depth = next(self.frames()).shape
+        self.resolution = self.height * self.width
         logging.info('First frame gathered successfully')
         logging.debug('Device width: {} Device height: {}'.format(
             self.width, self.height))
@@ -69,7 +70,7 @@ class Camera(object):
         # count the pixels that are greather than the threshold
         changed = len(changed[changed > threshold*255])
         # compute the change rate
-        change_rate = changed / (self.width * self.height)
+        change_rate = changed / self.resolution
         logging.debug('{} pixels changed ({}/1)'.format(changed, change_rate))
         if change_rate > sensitivity:
             logging.info('Motion detected')
