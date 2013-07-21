@@ -96,20 +96,23 @@ class Command(object):
 
     def run(self):
         self.setup_logging()
-        camera = self.get_camera()
-        outputs = self.get_outputs(camera)
+        with self.get_camera() as camera:
+            outputs = self.get_outputs(camera)
 
-        for output in outputs:
-            process = Process(target=output.run)
-            process.daemon = True
-            process.start()
-            self.processes.append(process)
+            for output in outputs:
+                process = Process(target=output.run)
+                process.daemon = True
+                process.start()
+                self.processes.append(process)
 
-        self.running = True
-        while self.running:
-            sleep(1)
+            self.running = True
+            try:
+                while self.running:
+                    sleep(1)
+            except KeyboardInterrupt:
+                self.stop()
 
-    def stop(self, signal, frame):
+    def stop(self, signal=None, frame=None):
         for process in self.processes:
             process.terminate()
             os.kill(process.pid, 9)

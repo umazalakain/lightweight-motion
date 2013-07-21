@@ -12,11 +12,17 @@ from itertools import takewhile, islice, chain
 class Camera(object):
     def __init__(self):
         self._frames = None
+
+    def __enter__(self):
         self.height, self.width, depth = next(self.frames()).shape
         self.resolution = self.height * self.width
         logging.info('First frame gathered successfully')
         logging.debug('Device width: {} Device height: {}'.format(
             self.width, self.height))
+        return self
+
+    def __exit__(self, type, value, traceback):
+        pass
 
     def frames(self):
         if self._frames is None:
@@ -87,19 +93,24 @@ class HTTPCamera(Camera):
         self.auth = auth
         super(HTTPCamera, self).__init__()
 
-    def reconnect(self, retry=True):
+    def __enter__(self):
+        self.capture = self.get_camera()
+        logging.info('HTTP camera opened at {}'.format(self.url))
+        return super(HTTPCamera, self).__enter__()
+
+    def __exit__(self, type, value, traceback):
+        self.capture.close()
+
+    def get_camera(self, retry=True):
         """
         Reconnects with remote HTTP cam. If retry, blocks until connected.
         """
         while True:
             try:
-                self.capture = requests.get(self.url, auth=self.auth, stream=True)
-            except requests.exceptions.ConnectionError, msg:
+                return requests.get(self.url, auth=self.auth, stream=True)
+            except requests.exceptions.ConnectionError:
                 if not retry:
                     raise
-            else:
-                break
-        logging.info('HTTP camera opened at {}'.format(self.url))
 
     def get_frames(self):
         """
@@ -108,7 +119,6 @@ class HTTPCamera(Camera):
         loaded into a np array and decoded by OpenCV.
         """
         while True:
-            self.reconnect()
             buffer = ''
             for chunk in self.capture.iter_content(self.chunk_size):
                 buffer += chunk
@@ -119,6 +129,7 @@ class HTTPCamera(Camera):
                     frame = cv2.imdecode(frame, 1)
                     if frame is not None:
                         yield frame
+            self.capture = self.get_camera()
 
     def split_content(self, buffer):
         raise NotImplemented()
@@ -136,9 +147,16 @@ class USBCamera(Camera):
     """Reads frames from a local USB device."""
 
     def __init__(self, device_idx=None):
-        self.capture, self.idx = self.get_camera(device_idx)
-        logging.info('USB camera {} opened'.format(self.idx))
+        self.idx = device_idx
         super(USBCamera, self).__init__()
+
+    def __enter__(self):
+        self.capture, self.idx = self.get_camera(self.idx)
+        logging.info('USB camera {} opened'.format(self.idx))
+        return super(USBCamera, self).__enter__()
+
+    def __exit__(self, type, value, traceback):
+        self.capture.release()
 
     def get_frames(self):
         """Frame generator."""
