@@ -79,6 +79,7 @@ class Camera(object):
 
 
 class HTTPCamera(Camera):
+    """Reads frames from HTTP and reconnects constantly."""
     chunk_size = 1024
 
     def __init__(self, url, auth=None):
@@ -87,6 +88,9 @@ class HTTPCamera(Camera):
         super(HTTPCamera, self).__init__()
 
     def reconnect(self, retry=True):
+        """
+        Reconnects with remote HTTP cam. If retry, blocks until connected.
+        """
         while True:
             try:
                 self.capture = requests.get(self.url, auth=self.auth, stream=True)
@@ -98,6 +102,11 @@ class HTTPCamera(Camera):
         logging.info('HTTP camera opened at {}'.format(self.url))
 
     def get_frames(self):
+        """
+        Frame generator that reconnects endlessly to the remote cam.
+        Chunks are accumulated until a full frame is constructed, the frame is
+        loaded into a np array and decoded by OpenCV.
+        """
         while True:
             self.reconnect()
             buffer = ''
@@ -124,12 +133,15 @@ class FoscamHTTPCamera(HTTPCamera):
 
 
 class USBCamera(Camera):
+    """Reads frames from a local USB device."""
+
     def __init__(self, device):
         self.capture = cv2.VideoCapture(device)
         logging.info('USB camera opened at {}'.format(device))
         super(USBCamera, self).__init__()
 
     def get_frames(self):
+        """Frame generator."""
         while True:
             _, frame = self.capture.read()
             yield frame
