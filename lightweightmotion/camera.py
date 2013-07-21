@@ -135,9 +135,9 @@ class FoscamHTTPCamera(HTTPCamera):
 class USBCamera(Camera):
     """Reads frames from a local USB device."""
 
-    def __init__(self, device):
-        self.capture = cv2.VideoCapture(device)
-        logging.info('USB camera opened at {}'.format(device))
+    def __init__(self, device_idx=None):
+        self.capture, self.idx = self.get_camera(device_idx)
+        logging.info('USB camera {} opened'.format(self.idx))
         super(USBCamera, self).__init__()
 
     def get_frames(self):
@@ -145,3 +145,27 @@ class USBCamera(Camera):
         while True:
             _, frame = self.capture.read()
             yield frame
+
+    def get_camera(self, device_idx=None):
+        """
+        Get the camera if only one, raise an exception otherwise.
+        """
+        if device_idx is None:
+            cameras = list(self.get_connected_cameras())
+            if len(cameras) == 1:
+                return cameras[0]
+            else:
+                indexes = ', '.join([ str(idx) for cam, idx in cameras ])
+                raise OSError('Multiple cameras: {}'.format(indexes))
+        else:
+            return cv2.VideoCapture(device_idx), device_idx
+
+    def get_connected_cameras(self):
+        """
+        Iterator of connected cameras.
+        Returns (cv2.VideoCapture, camera_index) tuples.
+        """
+        for idx in range(10):
+            camera = cv2.VideoCapture(idx)
+            if camera.isOpened():
+                yield camera, idx
