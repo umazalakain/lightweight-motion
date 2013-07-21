@@ -12,9 +12,10 @@ class Window(object):
         self.frames = frames
 
     def run(self):
+        logging.debug('Openning window')
         for frame in self.frames:
             cv2.imshow('camera', frame)
-            if cv2.waitKey(5)==27:
+            if cv2.waitKey(5) == 27:
                 break
 
 
@@ -40,12 +41,15 @@ class HTTPStream(object):
         pass
 
     def __init__(self, frames, host, port):
+        self.host, self.port = host, port
         self.frames = frames
         self.handler = self.CameraHandler
         self.handler.frames = self.frames
         self.server = self.ThreadedHTTPServer((host, port), self.handler)
 
     def run(self):
+        logging.debug('Openning HTTP stream output at {host}:{port}'.format(
+            host=self.host, port=self.port))
         try:
             self.server.serve_forever()
         except KeyboardInterrupt:
@@ -60,7 +64,7 @@ class EventDirectory(object):
         if not os.path.isdir(self.store_path):
             logging.warning('Directory {} does not exist'.format(self.store_path))
             os.mkdir(self.store_path)
-            logging.info('Directory {} created'.format(self.store_path))
+            logging.warning('Directory {} created'.format(self.store_path))
 
     @property
     def available_space(self):
@@ -87,14 +91,15 @@ class EventDirectory(object):
     def save_event(self, event):
         dirname = os.path.join(self.store_path, self.capture_filename())
         os.mkdir(dirname)
-        logging.info('Saving movement event in {}'.format(dirname))
+        logging.info('Saving motion event at {}'.format(dirname))
         for frame in event:
             self.make_space(40 * 1024**2)
             filename = '{}.jpg'.format(self.capture_filename())
             filename = os.path.join(dirname, filename)
             cv2.imwrite(filename, frame)
-            logging.debug('Saved frame {}'.format(filename))
+            logging.debug('Frame {} saved'.format(filename))
 
     def run(self):
         for event in self.events:
+            logging.info('New motion event detected')
             self.save_event(event)
