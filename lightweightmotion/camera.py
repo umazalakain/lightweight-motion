@@ -11,7 +11,7 @@ from itertools import takewhile, islice, chain
 
 class Camera(object):
     def __init__(self):
-        self._frames = None
+        self._frames = self.get_frames()
 
     def __enter__(self):
         self.height, self.width, depth = next(self.frames()).shape
@@ -26,8 +26,6 @@ class Camera(object):
 
     def frames(self):
         """Yield all the frames."""
-        if self._frames is None:
-            self._frames = self.get_frames()
         return self._frames
 
     def filter(self, threshold, sensitivity):
@@ -164,44 +162,48 @@ class FoscamHTTPCamera(HTTPCamera):
 class USBCamera(Camera):
     """Reads frames from a local USB device."""
 
-    def __init__(self, device_idx=None):
-        self.idx = device_idx
+    def __init__(self, idx=None):
+        self.idx = idx
+        self.auto = idx is None
         super(USBCamera, self).__init__()
 
     def __enter__(self):
-        self.capture, self.idx = self.get_camera(self.idx)
+        self.capture = self.get_camera()
         logging.info('USB camera {} opened'.format(self.idx))
         return super(USBCamera, self).__enter__()
 
     def __exit__(self, type, value, traceback):
         self.capture.release()
 
-    def get_frames(self):
-        """Frame generator."""
-        while True:
-            _, frame = self.capture.read()
-            yield frame
-
-    def get_camera(self, device_idx=None):
+    def get_camera(self, retry=True):
         """
-        Get the camera if only one, raise an exception otherwise.
+        Reopens local USB cam. If retry, blocks until opened.
         """
-        if device_idx is None:
-            cameras = list(self.get_connected_cameras())
-            if len(cameras) == 1:
-                return cameras[0]
-            else:
-                indexes = ', '.join([ str(idx) for cam, idx in cameras ])
-                raise OSError('Multiple cameras: {}'.format(indexes))
-        else:
-            return cv2.VideoCapture(device_idx), device_idx
+        camera = None
+        while camera is None:
+            cameras = self.get_connected_cameras()
+            camera = cameras.get(self.idx, None)
+            if self.auto and camera is None:
+                if len(cameras) == 1:
+                    self.idx, camera = cameras.items()[0]
+                elif len(cameras) > 1:
+                    indexes = ', '.join([ str(idx) for cam, idx in cameras ])
+                    raise OSError('Multiple cameras: {}'.format(indexes))
+            if not retry:
+                break
+        return camera
 
     def get_connected_cameras(self):
         """
-        Iterator of connected cameras.
-        Returns (cv2.VideoCapture, camera_index) tuples.
+        Return dict with available USB cams with indexes as keys.
         """
-        for idx in range(10):
-            camera = cv2.VideoCapture(idx)
-            if camera.isOpened():
-                yield camera, idx
+        cameras = { idx: cv2.VideoCapture(idx) for idx in range(10) }
+        return { idx: cam for idx, cam in cameras.items() if cam.read() }
+
+    def get_frames(self):
+        """Frame generator."""
+        while True:
+            read, frame = self.capture.read()
+            if not read:
+                self.capture = self.get_camera()
+            yield frame

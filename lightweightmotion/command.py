@@ -4,13 +4,13 @@ Lightweight motion detection, ready for your RPY!
 
 Usage:
     lightweight-motion -c <config_file>
-    lightweight-motion [options] <device> [-d <output-dir>] [-s <host:port>] [-w]
-    lightweight-motion [options] <url> [-d <output-dir>] [-s <host:port>] [-w]
+    lightweight-motion [options] usb [<device>] [-d <output-dir>] [-s <host:port>] [-w]
+    lightweight-motion [options] http <url> [-d <output-dir>] [-s <host:port>] [-w]
     lightweight-motion (-h | --help)
     lightweight-motion --version
 
 Arguments:
-    <device>                    Input video device ID (normally 0)
+    <device>                    Input video device ID (autodetected if unique)
     <url>                       Input video device url (ex: http://user:pass@your.cam/videostream.cgi)
 
 Outputs:
