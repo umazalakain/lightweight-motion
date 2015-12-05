@@ -1,6 +1,6 @@
 """lightweight-motion
 
-Lightweight motion detection, ready for your RPY!
+Lightweight motion detection, ready for your RPi!
 
 Usage:
     lightweight-motion -c <config_file>
@@ -75,20 +75,20 @@ class Command(object):
 
         if self.config.EVENT_DIR:
             events = camera.events(
-                    self.config.MOVEMENT_THRESHOLD, 
+                    self.config.MOVEMENT_THRESHOLD,
                     self.config.MOVEMENT_SENSITIVITY,
                     self.config.EVENT_BEFORE, self.config.EVENT_AFTER)
             outputs.append(EventDirectory(events, self.config.EVENT_DIR))
 
         if self.config.STREAM:
             frames = camera.watch(
-                    self.config.MOVEMENT_THRESHOLD, 
+                    self.config.MOVEMENT_THRESHOLD,
                     self.config.MOVEMENT_SENSITIVITY)
             outputs.append(HTTPStream(frames, *self.config.STREAM))
 
         if self.config.WINDOW:
             frames = camera.watch(
-                    self.config.MOVEMENT_THRESHOLD, 
+                    self.config.MOVEMENT_THRESHOLD,
                     self.config.MOVEMENT_SENSITIVITY)
             outputs.append(Window(frames))
 

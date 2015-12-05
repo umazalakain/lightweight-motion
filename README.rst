@@ -1,7 +1,7 @@
 lightweight-motion
 ==================
 
-**Lightweight RPY-ready motion detection for USB and HTTP(S) cameras!**
+**Lightweight RPi-ready motion detection for USB and HTTP(S) cameras!**
 
 
 Command line execution
